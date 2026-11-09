@@ -28,6 +28,9 @@ class FakeCatalog implements QuestCatalogDelegate {
     changes.notifyListeners();
   }
 
+  /// The version moved without a notice (say, while the app was away).
+  set silentVersion(int v) => _version = v;
+
   @override
   Listenable get versionChanges => changes;
 }
@@ -39,16 +42,24 @@ class FakeProgress implements QuestProgressDelegate {
   final Map<String, String> local = {};
   Set<String> serverClaims = {};
   int claimedReads = 0;
+  int daysListens = 0;
+
+  /// When set, a claims read waits for it.
+  Completer<void>? claimsGate;
   ClaimAnswer answer = (ClaimResult.claimed, 10);
   bool isOnline = true;
   int? _claimsVersion;
 
   @override
-  Stream<Map<String, Map<String, Object?>>> days(String uid, String from, String to) => daysOut.stream;
+  Stream<Map<String, Map<String, Object?>>> days(String uid, String from, String to) {
+    daysListens++;
+    return daysOut.stream;
+  }
 
   @override
   Future<Set<String>?> claimed(String uid, List<String> ids) async {
     claimedReads++;
+    await claimsGate?.future;
     return serverClaims.intersection(ids.toSet());
   }
 
