@@ -1,21 +1,24 @@
 import 'dart:async' show unawaited;
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
 import '../../keys/quest_keys.dart';
+import '../delegates/error_reporter.dart';
 import '../delegates/quest_catalog_delegate.dart';
 import '../models/quest.dart';
 
-/// The admin's quests: the phone's copy at once, the server's read only when its version differs from the copy's.
-/// Listen to it to rebuild when the quests change.
+/// The admin's quests: the phone's copy at once, the server's read only when its version differs from the copy's, and
+/// kept as the new copy. Listen to it to rebuild when the quests change.
 class QuestCatalog extends ChangeNotifier {
-  QuestCatalog(this._source) {
-    _set(_source.cached());
+  QuestCatalog(this._source, this._onError) {
+    _load();
     _source.versionChanges.addListener(ask);
     ask();
   }
 
   final QuestCatalogDelegate _source;
+  final ErrorReporter? _onError;
 
   List<Quest> _all = const [];
 
@@ -42,15 +45,35 @@ class QuestCatalog extends ChangeNotifier {
   /// [refresh], without waiting for it.
   void ask() => unawaited(refresh());
 
-  Future<void> _read(int version) async {
-    final config = await _source.fetch(version);
-    if (config != null) _set(config);
+  void _load() {
+    try {
+      final copy = jsonDecode(_source.loadLocal(QuestConfigKeys.name) ?? 'null');
+      if (copy is! Map) return;
+      final version = copy[QuestConfigKeys.version], quests = copy[QuestConfigKeys.quests];
+      if (version is int && quests is Map) _set(version, {for (final e in quests.entries) '${e.key}': e.value});
+    } catch (_) {
+      // No copy: the server's are read.
+    }
   }
 
-  void _set(Map<String, Object?>? config) {
-    final version = config?[QuestKeys.version];
-    _version = version is int ? version : null;
-    _all = [for (final MapEntry(:key, :value) in (config ?? const {}).entries) ?Quest.fromConfig(key, value)]
+  Future<void> _read(int version) async {
+    final Map<String, Object?>? quests;
+    try {
+      quests = await _source.fetch();
+    } catch (error, stack) {
+      if (_source.online) _onError?.call(error, stack, 'quests config');
+      return;
+    }
+    if (quests == null) return;
+    _set(version, quests);
+    final text = jsonEncode({QuestConfigKeys.version: version, QuestConfigKeys.quests: quests});
+    // Not kept: shown now all the same, and read again on the next start.
+    unawaited(_source.saveLocal(QuestConfigKeys.name, text).catchError((_) {}));
+  }
+
+  void _set(int version, Map<String, Object?> quests) {
+    _version = version;
+    _all = [for (final MapEntry(:key, :value) in quests.entries) ?Quest.fromConfig(key, value)]
       ..sort((a, b) => a.order != b.order ? a.order.compareTo(b.order) : a.id.compareTo(b.id));
     notifyListeners();
   }

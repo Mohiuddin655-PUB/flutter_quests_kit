@@ -64,4 +64,10 @@ class Quest {
   /// The admin's words, by language code; the app's own where one is missing.
   final Map<String, String> title;
   final Map<String, String> description;
+
+  /// The admin's title in [language], else in [fallback]; null when it has neither (the app's own words then).
+  String? titleIn(String language, {String fallback = 'en'}) => title[language] ?? title[fallback];
+
+  /// The admin's description, the same way.
+  String? descriptionIn(String language, {String fallback = 'en'}) => description[language] ?? description[fallback];
 }

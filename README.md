@@ -10,7 +10,7 @@ Backend-agnostic: the app gives two delegates (Firestore, Realtime Database, RES
 
 | What | Read | Kept on the phone |
 | --- | --- | --- |
-| The admin's quests | Once per version: the copy keeps its version, and a new one is read only when the server's differs | Yes (`QuestCatalogDelegate.cached`) |
+| The admin's quests | Once per version: the copy keeps its version, and a new one is read only when the server's differs | Yes (`quests_config`, through `saveLocal`) |
 | The account's days | One listener on this week's days (and yesterday's) while signed in, started again on a new day | The backend's own cache |
 | The claimed rewards | Once per claims version, only the ids the quests show now | Yes (`quest_claims`, through `saveLocal`) |
 
@@ -20,7 +20,7 @@ So with nothing new on the server, a start reads no quests and no claims: only t
 
 ```dart
 QuestsKit.setup(
-  catalogDelegate: MyQuestCatalog(),      // the admin's quests and their version
+  catalogDelegate: MyQuestCatalog(),      // the admin's quests, their version, a place on the phone
   progressDelegate: MyQuestProgress(),    // days, claims, claiming, the phone's copy
   today: () => clock.today,               // 'YYYY-MM-DD', the person's day by the server's clock
   dayChanges: clock,                      // told when the day changes
@@ -49,11 +49,12 @@ ListenableBuilder(
     return Column(children: [
       for (final q in QuestsKit.catalog.inGroup('daily'))
         QuestRow(
-          quest: q,
+          title: q.titleIn(language) ?? myWords(q.metric),
           done: p.done(q),
           claimed: p.isClaimed(q),
-          onClaim: p.isComplete(q) ? () => p.claim(q) : null,
+          onClaim: p.claimable(q) ? () => p.claim(q) : null,
         ),
+      Text('To claim: ${p.toClaim(QuestsKit.catalog.enabled)}'),
     ]);
   },
 );
@@ -91,7 +92,17 @@ A metric of the app's own extends `QuestMetric` (or `DayMetric` for one day's co
 
 ## The server
 
-The server keeps the days (`{day: {field: count}}`) as it counts the account's activity, and pays a claim: it reads
-the quest from the config, counts its progress the same way, refuses one not done or claimed already, adds the reward to
-the balance, writes the claim under its id, and raises the account's claims version. The app never writes progress or
-claims itself.
+Only the server counts a day and pays a claim; the app only reads (the rules refuse its writes). A ready example for
+Cloud Functions with the Admin SDK is in [`server/firebase_functions.ts`](server/firebase_functions.ts), and the rules
+in [`rules/firestore.rules`](rules/firestore.rules):
+
+- `countDay(uid, day, field, {by} | {person})`: from the triggers that see the account's activity, a day's field up by
+  a number, or a person added once (a list, so meeting someone twice counts once).
+- `claimQuest(uid, questId, today, streak)`: in one transaction, the quest read from the config, its progress worked
+  out with the same metrics as the app's, refused when not done or claimed already; else the claim kept under its id
+  (`questClaims/{claimId}`), the balance up with a credit in the ledger (as flutter_shop_kit keeps the wallet), and the
+  account's claims version raised so every phone reads its claims again. `today` is the app's day, refused unless
+  within a day of the server's.
+
+Keep the server's metrics the same as the app's `QuestsKit.setup(metrics: …)`: a quest the two count differently shows
+done on the phone and is refused as `incomplete`.

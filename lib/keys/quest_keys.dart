@@ -1,8 +1,5 @@
-/// A quest's fields in the admin's config (`{questId: {...}}`), and the [version] each copy of it keeps.
+/// A quest's fields in the admin's config (`{questId: {...}}`).
 abstract final class QuestKeys {
-  /// The config's version, kept in each copy of it.
-  static const version = 'version';
-
   /// Where the quest shows (the app's own groups, such as `daily`).
   static const group = 'group';
 
@@ -27,4 +24,11 @@ abstract final class QuestClaimsKeys {
   static const name = 'quest_claims';
   static const version = 'version';
   static const ids = 'ids';
+}
+
+/// The phone's copy of the admin's quests: `{version, quests}`, kept under [name] by the catalog delegate.
+abstract final class QuestConfigKeys {
+  static const name = 'quests_config';
+  static const version = 'version';
+  static const quests = 'quests';
 }

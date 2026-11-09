@@ -1,0 +1,26 @@
+rules_version = '2';
+
+// flutter_quests_kit's security rules: an account reads its own days and claims, and nobody writes them from the app:
+// the server counts the days (countDay) and pays the claims (claimQuest) with the Admin SDK, which these rules don't
+// bind. Copy these matches into your firestore.rules; change the paths marked CHANGE with server/firebase_functions.ts.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // CHANGE: where each account's days and claims are.
+    match /accounts/{uid}/questDays/{day} {
+      allow read: if isOwner(uid);
+      allow write: if false;
+    }
+
+    match /accounts/{uid}/questClaims/{claimId} {
+      allow read: if isOwner(uid);
+      allow write: if false;
+    }
+
+    // The account's claims version (`versions.questClaims` on the account) is raised by the server only: if the app
+    // writes its own account document, keep `versions` out of what it may change.
+  }
+}

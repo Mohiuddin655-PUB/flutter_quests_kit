@@ -4,20 +4,29 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_quests_kit/flutter_quests_kit.dart';
 
 class FakeCatalog implements QuestCatalogDelegate {
-  Map<String, Object?>? copy;
   Map<String, Object?> server = {};
+  final Map<String, String> local = {};
   int fetches = 0;
+  bool fails = false;
+  bool isOnline = true;
   final changes = ChangeNotifier();
   int? _version;
 
   @override
-  Map<String, Object?>? cached() => copy;
+  Future<Map<String, Object?>?> fetch() async {
+    fetches++;
+    if (fails) throw StateError('unreachable');
+    return {...server};
+  }
 
   @override
-  Future<Map<String, Object?>?> fetch(int version) async {
-    fetches++;
-    return copy = {...server, QuestKeys.version: version};
-  }
+  String? loadLocal(String name) => local[name];
+
+  @override
+  Future<void> saveLocal(String name, String text) async => local[name] = text;
+
+  @override
+  bool get online => isOnline;
 
   @override
   int? get version => _version;

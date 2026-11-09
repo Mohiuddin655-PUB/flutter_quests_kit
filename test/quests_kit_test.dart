@@ -161,6 +161,58 @@ void main() {
     expect(errors, isEmpty);
   });
 
+  test('a failed read is reported, changes nothing, and is read again on the next ask', () async {
+    final errors = <String>[];
+    QuestsKit.reset();
+    QuestsKit.setup(
+      catalogDelegate: catalog,
+      progressDelegate: progress,
+      today: () => today,
+      metrics: const {'chats': CountMetric('chats')},
+      onError: (e, s, where) => errors.add(where),
+    );
+    catalog.fails = true;
+    catalog.version = 1;
+    await QuestsKit.catalog.refresh();
+    expect(QuestsKit.catalog.all, isEmpty);
+    expect(errors, ['quests config']);
+    catalog
+      ..fails = false
+      ..isOnline = true;
+    await QuestsKit.catalog.refresh();
+    expect(QuestsKit.catalog.all, hasLength(6));
+    expect(catalog.local.keys, [QuestConfigKeys.name]);
+  });
+
+  test('claimable quests and the points they wait with', () async {
+    catalog.version = 1;
+    await QuestsKit.catalog.refresh();
+    QuestsKit.start('u1');
+    progress.claimsVersion = 1;
+    progress.daysOut.add({
+      today: {'chats': 3},
+    });
+    await pumpEventQueue();
+    final daily = QuestsKit.catalog.inGroup('daily').toList();
+    // chat3 (5) and active (5) are done; unknown isn't counted.
+    expect(daily.where(QuestsKit.progress.claimable).map((q) => q.id), ['chat3', 'active']);
+    expect(QuestsKit.progress.toClaim(daily), 10);
+    await QuestsKit.progress.claim(daily.firstWhere((q) => q.id == 'chat3'));
+    expect(QuestsKit.progress.toClaim(daily), 5);
+  });
+
+  test("a quest's words in a language, else in English, else none", () {
+    final q = Quest.fromConfig('ok', {
+      ...quest('daily', 'chats', 3),
+      QuestKeys.title: {'en': 'Chat', 'ar': 'دردشة'},
+      QuestKeys.description: {'en': 'Chat 3 times'},
+    })!;
+    expect(q.titleIn('ar'), 'دردشة');
+    expect(q.titleIn('bn'), 'Chat');
+    expect(q.descriptionIn('ar'), 'Chat 3 times');
+    expect(Quest.fromConfig('ok', quest('daily', 'chats', 3))!.titleIn('en'), isNull);
+  });
+
   test('Quest.fromConfig leaves out what the server leaves out', () {
     expect(Quest.fromConfig('ok', quest('daily', 'chats', 3)), isNotNull);
     expect(Quest.fromConfig('Bad', quest('daily', 'chats', 3)), isNull);

@@ -151,6 +151,12 @@ class QuestProgress extends ChangeNotifier {
     return s != null && _claims.contains(QuestDays.claimId(s.claimKey));
   }
 
+  /// [q] is done and its reward not claimed yet.
+  bool claimable(Quest q) => isComplete(q) && !isClaimed(q);
+
+  /// The rewards of [quests] that can be claimed now, added up.
+  int toClaim(Iterable<Quest> quests) => quests.where(claimable).fold(0, (total, q) => total + q.reward);
+
   /// Claims [q]'s reward on the server, with the balance after it; null for a second tap while one is under way, or a
   /// quest whose metric the app doesn't name.
   Future<ClaimAnswer?> claim(Quest q) async {

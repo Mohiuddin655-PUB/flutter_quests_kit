@@ -32,7 +32,7 @@ class QuestsPage extends StatelessWidget {
           final p = QuestsKit.progress;
           return ListView(
             children: [
-              ListTile(title: Text('Balance: ${server.balance}')),
+              ListTile(title: Text('Balance: ${server.balance}'), subtitle: Text('To claim: ${p.toClaim(QuestsKit.catalog.enabled)}')),
               Wrap(
                 spacing: 8,
                 children: [
@@ -42,11 +42,11 @@ class QuestsPage extends StatelessWidget {
               ),
               for (final q in QuestsKit.catalog.enabled)
                 ListTile(
-                  title: Text('${q.id} (${q.group})'),
+                  title: Text(q.titleIn('en') ?? q.id),
                   subtitle: Text('${p.done(q)} / ${q.goal}, +${q.reward}'),
                   trailing: p.isClaimed(q)
                       ? const Icon(Icons.check)
-                      : FilledButton(onPressed: p.isComplete(q) ? () => p.claim(q) : null, child: const Text('Claim')),
+                      : FilledButton(onPressed: p.claimable(q) ? () => p.claim(q) : null, child: const Text('Claim')),
                 ),
             ],
           );

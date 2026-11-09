@@ -6,7 +6,7 @@ import 'package:flutter_quests_kit/flutter_quests_kit.dart';
 /// The admin's quests, as a server would keep them.
 class MemoryCatalog implements QuestCatalogDelegate {
   final _changes = ValueNotifier<int?>(1);
-  Map<String, Object?>? _copy;
+  final _local = <String, String>{};
 
   static const quests = {
     'chat3': {QuestKeys.group: 'daily', QuestKeys.metric: 'chats', QuestKeys.goal: 3, QuestKeys.reward: 10, QuestKeys.order: 1},
@@ -15,16 +15,22 @@ class MemoryCatalog implements QuestCatalogDelegate {
   };
 
   @override
-  Map<String, Object?>? cached() => _copy;
-
-  @override
-  Future<Map<String, Object?>?> fetch(int version) async => _copy = {...quests, QuestKeys.version: version};
+  Future<Map<String, Object?>?> fetch() async => quests;
 
   @override
   int? get version => _changes.value;
 
   @override
   Listenable get versionChanges => _changes;
+
+  @override
+  String? loadLocal(String name) => _local[name];
+
+  @override
+  Future<void> saveLocal(String name, String text) async => _local[name] = text;
+
+  @override
+  bool get online => true;
 }
 
 /// A server that counts a day and pays claims, in memory.

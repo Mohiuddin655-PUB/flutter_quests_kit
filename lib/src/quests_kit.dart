@@ -29,7 +29,7 @@ abstract final class QuestsKit {
     ErrorReporter? onError,
   }) {
     if (_parts != null) throw StateError('QuestsKit.setup was called already.');
-    final catalog = QuestCatalog(catalogDelegate);
+    final catalog = QuestCatalog(catalogDelegate, onError);
     _parts = (catalog: catalog, progress: QuestProgress(catalog, progressDelegate, metrics, today, dayChanges, changes, onError));
   }
 
