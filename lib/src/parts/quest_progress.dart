@@ -119,10 +119,13 @@ class QuestProgress extends ChangeNotifier {
 
   void _changed() {
     final all = _catalog.all, context = QuestContext(days: _counted, today: _day, all: all, metrics: _metrics);
-    _states = {
-      for (final q in all)
-        if (_metrics[q.metric] case final m?) q.id: m.of(q, context),
-    };
+    // Signed out, there is no day to work from.
+    _states = _day.isEmpty
+        ? const {}
+        : {
+            for (final q in all)
+              if (_metrics[q.metric] case final m?) q.id: m.of(q, context),
+          };
     final keys = [for (final s in _states.values) QuestDays.claimId(s.claimKey)]..sort();
     final joined = keys.join(',');
     if (_uid.isNotEmpty && _daysHeard && joined != _claimKeys) {

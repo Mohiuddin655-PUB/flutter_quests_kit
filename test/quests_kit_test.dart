@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_quests_kit/flutter_quests_kit.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -144,6 +145,20 @@ void main() {
     QuestsKit.start('u1');
     final q = QuestsKit.catalog.all.firstWhere((q) => q.id == 'chat3');
     expect(await QuestsKit.progress.claim(q), (ClaimResult.offline, null));
+  });
+
+  test('signed out, a change of the quests works nothing out (there is no day)', () async {
+    // A listener's error is only reported, not thrown: catch the report.
+    final errors = <FlutterErrorDetails>[];
+    final before = FlutterError.onError;
+    FlutterError.onError = errors.add;
+    addTearDown(() => FlutterError.onError = before);
+    catalog.version = 1;
+    await QuestsKit.catalog.refresh();
+    final q = QuestsKit.catalog.all.firstWhere((q) => q.id == 'week5');
+    expect(QuestsKit.progress.done(q), 0);
+    expect(QuestsKit.progress.isComplete(q), isFalse);
+    expect(errors, isEmpty);
   });
 
   test('Quest.fromConfig leaves out what the server leaves out', () {

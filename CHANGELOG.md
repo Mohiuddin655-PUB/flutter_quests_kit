@@ -1,3 +1,8 @@
+## 0.1.1
+
+- Signed out (no day yet), a change of the quests or of what a metric reads no longer works the progress out from an
+  empty day, which threw for `WeekDoneMetric`.
+
 ## 0.1.0
 
 - First release: `QuestsKit.setup`, `start` and `clear`; `QuestsKit.catalog` (the admin's quests, read again only when
