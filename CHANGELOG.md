@@ -1,3 +1,8 @@
+## 0.2.1
+
+- `QuestsKit.progress.heard`: the days were heard since the listener (re)started, so an app can tell a quest just
+  completed from one that was already done as the progress loads. Signing out sets it back to false.
+
 ## 0.2.0
 
 - **The kit keeps the quests' phone copy**: `QuestCatalogDelegate` now only reads the server (`fetch()`, no version)

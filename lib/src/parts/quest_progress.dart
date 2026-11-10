@@ -84,6 +84,7 @@ class QuestProgress extends ChangeNotifier {
     _counted = const {};
     _states = const {};
     _claimKeys = '';
+    _daysHeard = false;
     notifyListeners();
   }
 
@@ -137,6 +138,10 @@ class QuestProgress extends ChangeNotifier {
 
   /// The signed-in account, or empty.
   String get uid => _uid;
+
+  /// Today's days were heard since the listener (re)started: before, every quest reads as not done, so a change from
+  /// not done to done means a quest was just completed only once this is true.
+  bool get heard => _daysHeard;
 
   /// What [field] counts today, as the server counted it.
   int today(String field) => (_counted[_day] ?? const QuestDay()).count(field);

@@ -1,6 +1,6 @@
 name: flutter_quests_kit
 description: "Daily, weekly and streak quests that reward an in-app currency: the admin's quests from a remote config, progress from day counts the server keeps, claims read only when their version changes. Backend-agnostic."
-version: 0.2.0
+version: 0.2.1
 repository: https://github.com/Mohiuddin655-PUB/flutter_quests_kit
 issue_tracker: https://github.com/Mohiuddin655-PUB/flutter_quests_kit/issues
 topics: [quests, rewards, gamification, offline, firestore]
